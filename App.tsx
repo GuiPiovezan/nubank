@@ -1,6 +1,7 @@
 import '@config/reactotronConfig'
 
 import React from 'react'
+import { StatusBar } from 'react-native'
 import { Provider as StoreProvider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 
@@ -23,6 +24,7 @@ const App: React.FC = () => {
         <PaperProvider>
           <StyledProvider>
             <SnackbarProvider>
+              <StatusBar barStyle="light-content" backgroundColor="#8B10AE" />
               <Routes />
             </SnackbarProvider>
           </StyledProvider>

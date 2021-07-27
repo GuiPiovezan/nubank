@@ -1,35 +1,113 @@
-import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
+import { Animated } from 'react-native'
+import {
+  PanGestureHandler,
+  PanGestureHandlerGestureEvent,
+  State,
+} from 'react-native-gesture-handler'
 
-import HomeScreenView from './view'
+import { Header } from '@components/Header'
+import { Menu } from '@components/Menu'
+import { Tabs } from '@components/Tabs'
+import { MaterialIcons } from '@expo/vector-icons'
 
-const HomeScreenContainer: React.FC = () => {
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
+import {
+  Anotation,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  Container,
+  Content,
+  Description,
+  Title,
+} from './styles'
 
-  useEffect(() => {
-    let mounted = true
+const HomeScreen: React.FC = () => {
+  let offset = 0
 
-    async function fetchMessage() {
-      if (mounted) setLoading(true)
+  const translateY = new Animated.Value(0)
 
-      try {
-        const response = await axios.get('api/hello')
+  const animatedEvent = Animated.event(
+    [
+      {
+        nativeEvent: {
+          translationY: translateY,
+        },
+      },
+    ],
+    { useNativeDriver: true },
+  )
 
-        if (mounted) setMessage(response.data.message)
-      } finally {
-        if (mounted) setLoading(false)
+  const onHandlerStateChange = (event: PanGestureHandlerGestureEvent) => {
+    if (event.nativeEvent.state === State.ACTIVE) {
+      let opened = false
+      const { translationY } = event.nativeEvent
+
+      offset += translationY
+
+      if (translationY >= 100) {
+        opened = true
+      } else {
+        translateY.setValue(offset)
+        translateY.setOffset(offset)
+        offset = 0
       }
+
+      Animated.timing(translateY, {
+        toValue: opened ? 380 : 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        offset = opened ? 380 : 0
+        translateY.setOffset(offset)
+        translateY.setValue(0)
+      })
     }
+  }
 
-    fetchMessage()
+  return (
+    <Container>
+      <Header />
 
-    return function unmount() {
-      mounted = false
-    }
-  }, [])
+      <Content>
+        <Menu translateY={translateY} />
 
-  return <HomeScreenView loading={loading} message={message} />
+        <PanGestureHandler
+          onGestureEvent={animatedEvent}
+          onHandlerStateChange={onHandlerStateChange}
+        >
+          <Card
+            style={{
+              transform: [
+                {
+                  translateY: translateY.interpolate({
+                    inputRange: [-350, 0, 380],
+                    outputRange: [-50, 0, 380],
+                    extrapolate: 'clamp',
+                  }),
+                },
+              ],
+            }}
+          >
+            <CardHeader>
+              <MaterialIcons name="attach-money" size={28} color="#666" />
+              <MaterialIcons name="visibility-off" size={28} color="#666" />
+            </CardHeader>
+            <CardContent>
+              <Title>Saldo disponível</Title>
+              <Description>R$ 7.197.611,65</Description>
+            </CardContent>
+            <CardFooter>
+              <Anotation>Transferência de R$20,00 recebido via PIX</Anotation>
+            </CardFooter>
+          </Card>
+        </PanGestureHandler>
+      </Content>
+
+      <Tabs translateY={translateY} />
+    </Container>
+  )
 }
 
-export default HomeScreenContainer
+export default HomeScreen
